@@ -3,7 +3,7 @@
 namespace supportSystem\Router;
 class Router
 {
-    public function routeList($action)
+    public static function routeList($action)
     {
         $base_url = 'C:\xampp.7.4\htdocs\whmcs\modules\addons\supportSystem\Views\\admin';
         switch ($action) {

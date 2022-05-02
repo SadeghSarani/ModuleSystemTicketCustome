@@ -1,5 +1,6 @@
 <?php
 
+
 ?>
 <br>
 
@@ -10,7 +11,7 @@
         <option value="none">None</option>
         <?php collect($results['departments']['department'])->each(function ($item) use ($data) { ?>
             <option value="<?php echo $item['name'] ?>"
-                <?php echo $item['name'] == $data[0]['department_name'] ? 'selected' : '' ?>>
+                <?php echo $item['id'] == $data[0]['dept_id'] ? 'selected' : '' ?>>
                 <?php echo $item['name'] ?> </option>
         <?php }); ?>
     </select>

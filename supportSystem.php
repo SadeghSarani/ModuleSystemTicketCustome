@@ -1,15 +1,11 @@
 <?php
 
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'ConfigModule/ConfigModule.php';
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'Router/Router.php';
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'Repositories/DepartmentTopicRepository.php';
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'SetPage.php';
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'LocalApies/LocalApi.php';
-include_once __DIR__ . DIRECTORY_SEPARATOR . 'Repositories/ProductGroupRepository.php';
+include_once __DIR__ . DIRECTORY_SEPARATOR . 'lib.php';
 
 
 use supportSystem\ConfigModule\ConfigModule;
 use supportSystem\LocalApies\LocalApi;
+use supportSystem\ProcessTopic\TopicProcess;
 use supportSystem\Repositories\DepartmentTopicRepository;
 use supportSystem\Repositories\ProductGroupRepository;
 use supportSystem\Router\Router;
@@ -37,33 +33,16 @@ function supportSystem_output($vars)
     $results = LocalApi::getDepartments();
     $group = new ProductGroupRepository();
     $productGroup = $group->getProductAll();
-    $route = new Router();
-    $action = $_GET['action'];
+    $processTopic = new TopicProcess();
     $departments = $departmentRepository->getAll();
     $id = $_POST['id'];
-    include $route->routeList($action);
-    if (isset($_POST['sub']) && !empty($_POST['topic']) && !empty($_POST['dept_id'])) {
-        $data = [
-            'topics' => $_POST['topic'],
-            'dept_id' => $_POST['dept_id'],
-            'gid' => $_POST['gid'],
-        ];
-        $departmentRepository->insert($data);
-    }
+    $action = $_GET['action'];
+    include_once Router::routeList($action);
     if (isset($_POST['update'])) {
         $data = $departmentRepository->where($id)->toArray();
         include_once __DIR__ . '/views/admin/updateTopic.php';
     }
-    if (isset($_POST['update-data']) && !empty($_POST['dept_name']) || !empty($_POST['text'])) {
-        $updateData = [
-            'department_name' => $_POST['dept_name'],
-            'topics' => $_POST['text'],
-        ];
-        $departmentRepository->update($_POST['id'], $updateData);
-    }
-    if (isset($_POST['delete'])) {
-        $departmentRepository->delete($_POST['id']);
-    }
+    $processTopic->allProcessTopic($processTopic, $departmentRepository, $id);
 }
 
 function supportSystem_clientarea()
@@ -78,14 +57,14 @@ function supportSystem_clientarea()
         $dataSql = $departmentRepository->where($gid);
         $department = LocalApi::getDepartments();
         $department = $department['departments']['department'];
-        $callback = collect($dataSql)->map(function ($item) use ($department) {
+        $departmentGroupID = collect($dataSql)->map(function ($item) use ($department) {
             foreach ($department as $dep) {
                 if ($dep['id'] == $item['dept_id']) {
                     return $dep;
                 }
             }
         });
-        $departmentName = array_filter($callback->toArray());
+        $departmentName = array_filter($departmentGroupID->toArray());
         echo json_encode($departmentName);
         http_response_code(200);
         die;
@@ -112,10 +91,6 @@ function supportSystem_clientarea()
     return SetPage::setPage($data['departments']['department'], $services);
 }
 
-/**
- * @param $service_id
- * @return mixed
- */
 function getGid($service_id)
 {
     $products = LocalApi::getProducts($service_id);
